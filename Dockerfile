@@ -1,9 +1,14 @@
-FROM ubuntu:18.04
+FROM alpine:3.12
 
-RUN apt-get update && apt-get install -y apt-mirror cron
+RUN apk update && apk add rsync mqtt-exec && \
+    mkdir /alpine-mirror
 
-COPY mirror.list /etc/apt/mirror.list
+COPY src/alpine-mirror /etc/periodic/hourly/alpine-mirror 
 
-COPY crontab /etc/cron.d
+RUN chmod +x /etc/periodic/hourly/alpine-mirror
 
-ENTRYPOINT service cron start && crontab /etc/cron.d/* && /usr/bin/apt-mirror && tail -F /var/spool/apt-mirror/var/cron.log
+COPY src/rsync.conf /etc/rsyncd.conf
+
+WORKDIR /alpine-mirror
+
+ENTRYPOINT sh /etc/periodic/hourly/alpine-mirror && exec crond -f

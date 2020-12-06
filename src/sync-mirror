@@ -1,0 +1,28 @@
+#!/bin/sh
+
+src="rsync://rsync.alpinelinux.org/alpine/"
+dest="/var/www/localhost/htdocs/alpine/"
+lock="/tmp/sync-mirror.lock"
+topic="$1"
+dir="$2"
+
+[ -z "$flock" ] && exec env flock=1 flock $lock $0 "$@"
+
+if [ -n "$dir" ] && [ -d "$dest/${dir%/*}" ]; then
+    logger "Syncing directory: $dir"
+    src="${src}${dir%/}/"
+    dest="${dest}${dir%/}/"
+else
+    logger "Syncing all directories"
+fi
+
+/usr/bin/rsync \
+    --archive \
+    --update \
+    --verbose \
+    --progress \
+    --timeout=600 \
+    --delay-updates \
+    --delete-after \
+    "$src" \
+    "$dest"
